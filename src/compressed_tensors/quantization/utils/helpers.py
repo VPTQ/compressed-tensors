@@ -154,13 +154,13 @@ def can_quantize(value: torch.Tensor, quant_args: "QuantizationArgs") -> bool:  
     """
     bit_depth = get_torch_bit_depth(value)
     requested_depth = quant_args.num_bits
-    if bit_depth < quant_args.num_bits:
+    if bit_depth < requested_depth:
         _LOGGER.warn(
             f"Can't quantize tensor with bit depth {bit_depth} to {requested_depth}."
             "The QuantizationArgs provided are not compatible with the input tensor."
         )
 
-    return bit_depth > quant_args.num_bits
+    return bit_depth > requested_depth
 
 
 def calculate_compression_ratio(model: Module) -> float:
