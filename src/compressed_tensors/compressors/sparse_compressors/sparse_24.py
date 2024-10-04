@@ -15,7 +15,8 @@
 
 from typing import Dict
 
-from compressed_tensors.compressors import Compressor
+from compressed_tensors.compressors.base import BaseCompressor
+from compressed_tensors.compressors.sparse_compressors.base import BaseSparseCompressor
 from compressed_tensors.config import CompressionFormat
 from compressed_tensors.utils import (
     merge_names,
@@ -26,8 +27,8 @@ from compressed_tensors.utils import (
 from torch import Tensor
 
 
-@Compressor.register(name=CompressionFormat.sparse_24.value)
-class Sparse24Compressor(Compressor):
+@BaseCompressor.register(name=CompressionFormat.sparse_24.value)
+class Sparse24Compressor(BaseSparseCompressor):
     """
     Compresses a with 2:4 sparsity structure for inference
     with sparse 2:4 kernels for float/float16/bfloat16.
