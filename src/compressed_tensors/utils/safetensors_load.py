@@ -32,6 +32,7 @@ __all__ = [
     "get_nested_weight_mappings",
     "get_quantization_state_dict",
     "is_quantization_param",
+    "get_nested_mappings_from_state_dict",
 ]
 
 
@@ -176,7 +177,7 @@ def get_weight_mappings(path_to_model_or_tensors: str) -> Dict[str, str]:
 
 
 def get_nested_weight_mappings(
-    model_path: str, params_to_nest: List[str]
+    model_path: str, params_to_nest: List[str], return_other_params: bool = False
 ) -> Dict[str, Dict[str, str]]:
     """
     Takes a path to a state dict saved in safetensors format and returns a nested
@@ -197,18 +198,27 @@ def get_nested_weight_mappings(
     :return: nested mapping of parameterized layer name to file location
     """
     weight_mappings = get_weight_mappings(model_path)
+    other_params = {}
 
     nested_weight_mappings = {}
     for key in weight_mappings.keys():
+        matched = False
         for param_name in params_to_nest:
             maybe_match = match_param_name(key, param_name)
             if maybe_match is not None:
                 dense_param = maybe_match
                 if dense_param not in nested_weight_mappings:
                     nested_weight_mappings[dense_param] = {}
+                matched = True
                 nested_weight_mappings[dense_param][param_name] = weight_mappings[key]
+        if not matched:
+            other_params[key] = weight_mappings[key]
 
-    return nested_weight_mappings
+    return (
+        nested_weight_mappings
+        if not return_other_params
+        else (nested_weight_mappings, other_params)
+    )
 
 
 def get_quantization_state_dict(model_path: str) -> Dict[str, Tensor]:
@@ -238,3 +248,17 @@ def is_quantization_param(name: str) -> bool:
         return True
 
     return False
+
+
+def get_nested_mappings_from_state_dict(state_dict, params_to_nest):
+    nested_weight_mappings = {}
+    for key in state_dict.keys():
+        for param_name in params_to_nest:
+            maybe_match = match_param_name(key, param_name)
+            if maybe_match is not None:
+                dense_param = maybe_match
+                if dense_param not in nested_weight_mappings:
+                    nested_weight_mappings[dense_param] = {}
+                nested_weight_mappings[dense_param][param_name] = state_dict[key]
+
+    return nested_weight_mappings
