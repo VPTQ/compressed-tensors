@@ -27,7 +27,7 @@ from compressed_tensors.quantization import (
 from compressed_tensors.quantization.lifecycle import (
     apply_quantization_config,
     apply_quantization_status,
-    find_compression_targets,
+    expand_targets,
 )
 from compressed_tensors.quantization.utils import iter_named_leaf_modules
 from transformers import AutoModelForCausalLM
@@ -296,6 +296,6 @@ def test_apply_quantization_status(caplog, ignore, should_raise_warning):
         ),
     ],
 )
-def test_find_compression_targets(model, targets, ignore, expected):
-    actual_targets = find_compression_targets(model, targets, ignore)
+def test_expand_targets(model, targets, ignore, expected):
+    actual_targets = expand_targets(model, targets, ignore)
     assert actual_targets == expected
