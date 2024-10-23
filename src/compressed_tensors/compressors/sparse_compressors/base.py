@@ -30,7 +30,8 @@ _LOGGER: logging.Logger = logging.getLogger(__name__)
 class BaseSparseCompressor(BaseCompressor):
     """
     Base class representing a sparse compression algorithm. Each child class should
-    implement compression_param_info, compress_weight and decompress_weight.
+    implement compression_param_info, compress_weight and decompress_weight; child
+    classes should also define COMPRESSION_PARAM_NAMES.
 
     Compressors support compressing/decompressing a full module state dict or a single
     quantized PyTorch leaf module.
@@ -76,6 +77,7 @@ class BaseSparseCompressor(BaseCompressor):
         _LOGGER.debug(
             f"Compressing model with {len(model_state)} parameterized layers..."
         )
+
         for name, value in tqdm(model_state.items(), desc="Compressing model"):
             if not self.should_compress(name, compression_targets):
                 compressed_dict[name] = value

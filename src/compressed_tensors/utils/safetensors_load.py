@@ -32,6 +32,7 @@ __all__ = [
     "get_nested_weight_mappings",
     "get_quantization_state_dict",
     "is_quantization_param",
+    "get_nested_mappings_from_state_dict",
 ]
 
 WEIGHT_MAPPING_TYPE = Dict[str, str]
@@ -257,3 +258,17 @@ def is_quantization_param(name: str) -> bool:
         return True
 
     return False
+
+
+def get_nested_mappings_from_state_dict(state_dict, params_to_nest):
+    nested_weight_mappings = {}
+    for key in state_dict.keys():
+        for param_name in params_to_nest:
+            maybe_match = match_param_name(key, param_name)
+            if maybe_match is not None:
+                dense_param = maybe_match
+                if dense_param not in nested_weight_mappings:
+                    nested_weight_mappings[dense_param] = {}
+                nested_weight_mappings[dense_param][param_name] = state_dict[key]
+
+    return nested_weight_mappings
