@@ -33,6 +33,14 @@ from compressed_tensors.quantization.utils import iter_named_leaf_modules
 from transformers import AutoModelForCausalLM
 
 
+@pytest.fixture
+def model():
+    return AutoModelForCausalLM.from_pretrained(
+        "Xenova/llama2.c-stories15M",
+        torch_dtype="auto",
+    )
+
+
 def test_target_prioritization():
     # tests that the config_groups are applied in the correct order
     # of priority, where exact layer name > regex > module name
@@ -273,14 +281,6 @@ def test_apply_quantization_status(caplog, ignore, should_raise_warning):
             assert len(caplog.text) > 0
         else:
             assert len(caplog.text) == 0
-
-
-@pytest.fixture
-def model():
-    return AutoModelForCausalLM.from_pretrained(
-        "Xenova/llama2.c-stories15M",
-        torch_dtype="auto",
-    )
 
 
 @pytest.mark.parametrize(

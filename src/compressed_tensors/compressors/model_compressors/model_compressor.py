@@ -39,7 +39,7 @@ from compressed_tensors.quantization import (
     apply_quantization_config,
     load_pretrained_quantization,
 )
-from compressed_tensors.quantization.lifecycle import find_compression_targets
+from compressed_tensors.quantization.lifecycle import expand_targets
 from compressed_tensors.quantization.utils import (
     is_module_quantized,
     iter_named_leaf_modules,
@@ -277,9 +277,13 @@ class ModelCompressor:
                 )
 
         if self.sparsity_compressor is not None:
-            compression_targets = self._find_sparse_compression_targets(model=model)
+            sparse_compression_targets: Set[str] = expand_targets(
+                model=model,
+                targets=self.sparsity_config.targets,
+                ignore=self.sparsity_config.ignore,
+            )
             compressed_state_dict = self.sparsity_compressor.compress(
-                compressed_state_dict, compression_targets=compression_targets
+                compressed_state_dict, compression_targets=sparse_compression_targets
             )
 
         # HACK: Override the dtype_byte_size function in transformers to
@@ -369,13 +373,6 @@ class ModelCompressor:
             prefix, param_name = ".".join(split_name[:-1]), split_name[-1]
             module = operator.attrgetter(prefix)(model)
             update_parameter_data(module, data, param_name)
-
-    def _find_sparse_compression_targets(self, model: Module) -> Set[str]:
-        return find_compression_targets(
-            model=model,
-            targets=self.sparsity_config.targets,
-            ignore=self.sparsity_config.ignore,
-        )
 
 
 def map_modules_to_quant_args(model: Module) -> Dict:

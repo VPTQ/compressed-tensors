@@ -56,7 +56,7 @@ __all__ = [
     "apply_quantization_config",
     "apply_quantization_status",
     "find_name_or_class_matches",
-    "find_compression_targets",
+    "expand_targets",
 ]
 
 from compressed_tensors.quantization.utils.helpers import is_module_quantized
@@ -281,7 +281,7 @@ def find_name_or_class_matches(
         return matches
 
 
-def find_compression_targets(
+def expand_targets(
     model: Module, targets: Iterable[str], ignore: Iterable[str]
 ) -> Set[str]:
     """

@@ -77,8 +77,8 @@ class BaseSparseCompressor(BaseCompressor):
             f"Compressing model with {len(model_state)} parameterized layers..."
         )
         for name, value in tqdm(model_state.items(), desc="Compressing model"):
-            prefix = name.rsplit(".", 1)[0]
-            if compression_targets and prefix not in compression_targets:
+            if not self.should_compress(name, compression_targets):
+                compressed_dict[name] = value
                 continue
             compression_data = self.compress_weight(name, value)
             for key in compression_data.keys():
@@ -106,8 +106,10 @@ class BaseSparseCompressor(BaseCompressor):
         :param device: device to load decompressed weights onto
         :return: iterator for generating decompressed weights
         """
-        weight_mappings = get_nested_weight_mappings(
-            path_to_model_or_tensors, self.COMPRESSION_PARAM_NAMES
+        weight_mappings, other_params = get_nested_weight_mappings(
+            path_to_model_or_tensors,
+            self.COMPRESSION_PARAM_NAMES,
+            return_other_params=True,
         )
         for weight_name in weight_mappings.keys():
             weight_data = {}
@@ -117,3 +119,22 @@ class BaseSparseCompressor(BaseCompressor):
                     weight_data[param_name] = f.get_tensor(full_name)
             decompressed = self.decompress_weight(weight_data)
             yield weight_name, decompressed
+
+        for other_name, safe_path in other_params.items():
+            with safe_open(safe_path, framework="pt", device=device) as f:
+                value = f.get_tensor(other_name)
+            yield other_name, value
+
+    @staticmethod
+    def should_compress(name: str, targets: Optional[Set[str]] = None) -> bool:
+        """
+        Check if a parameter should be compressed
+
+        :param name: name of the parameter
+        :param targets: set of layer prefixes to compress
+        :return: whether or not the parameter should be compressed
+        """
+        if targets is None:
+            return name.endswith(".weight")
+
+        return name.endswith(".weight") and name[: -(len(".weight"))] in targets
